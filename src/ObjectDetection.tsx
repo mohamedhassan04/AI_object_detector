@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from "react";
-import * as cocoSsd from "@tensorflow-models/coco-ssd"; // مكتبة التعرف على الأشياء
-import "@tensorflow/tfjs"; // لازم هذا حتى يشتغل cocoSsd
+import * as cocoSsd from "@tensorflow-models/coco-ssd"; // library for object detection
+import "@tensorflow/tfjs"; // library for TensorFlow.js operations
 
 const getColorForClass = (className: string): string => {
   const colorMap: { [key: string]: string } = {
@@ -9,10 +9,9 @@ const getColorForClass = (className: string): string => {
     chair: "#FF5733",
     tv: "#FFC107",
     book: "#9C27B0",
-    // 👇 تضيف أنواع أخرى حسب الحاجة
   };
 
-  // لو النوع مش موجود، نرجع لون عشوائي
+  // if the class name is not in the color map, generate a random color
   if (!colorMap[className]) {
     colorMap[className] = getRandomColor();
   }
@@ -20,7 +19,7 @@ const getColorForClass = (className: string): string => {
   return colorMap[className];
 };
 
-// 🎲 توليد لون عشوائي في حالة ما كانش النوع موجود
+// generate a random color if the color is not in the color map
 const getRandomColor = (): string => {
   const letters = "0123456789ABCDEF";
   let color = "#";
@@ -31,10 +30,10 @@ const getRandomColor = (): string => {
 };
 
 const ObjectDetection: React.FC = () => {
-  const videoRef = useRef<HTMLVideoElement | null>(null); // تحديد نوع الفيديو
-  const canvasRef = useRef<HTMLCanvasElement | null>(null); // تحديد نوع الكانفاس
+  const videoRef = useRef<HTMLVideoElement | null>(null); // check the type of video
+  const canvasRef = useRef<HTMLCanvasElement | null>(null); // check the type of canvas
 
-  // ⏺️ تشغيل الكاميرا
+  // ⏺️ start the camera
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -51,24 +50,24 @@ const ObjectDetection: React.FC = () => {
     }
   };
 
-  // 🧠 تشغيل الموديل والتعرف على الأشياء
+  // 🧠 Run the model and start detection
   const runObjectDetection = async () => {
-    const model = await cocoSsd.load(); // تحميل الموديل
+    const model = await cocoSsd.load(); // load the model
 
     const detectFrame = async () => {
       const video = videoRef.current;
       if (video && video.readyState === 4) {
         const predictions = await model.detect(video);
 
-        drawPredictions(predictions); // يرسم التوقعات
-        requestAnimationFrame(detectFrame); // يعيد التشغيل كل فريم
+        drawPredictions(predictions); // draw the predictions on the canvas
+        requestAnimationFrame(detectFrame); // request the next frame
       }
     };
 
-    detectFrame(); // أول نداء
+    detectFrame(); // start the detection loop
   };
 
-  // 🎨 رسم التوقعات على الكانفاس
+  // 🎨 Draw the canvas
   const drawPredictions = (predictions: cocoSsd.DetectedObject[]) => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
@@ -78,7 +77,7 @@ const ObjectDetection: React.FC = () => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // ضبط أبعاد الكانفاس
+    // The canvas size should match the video size
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
@@ -87,24 +86,24 @@ const ObjectDetection: React.FC = () => {
     predictions.forEach((prediction) => {
       const [x, y, width, height] = prediction.bbox;
 
-      // 🧪 توليد لون فريد حسب اسم الكائن
+      // 🧪 Generate a random color for the frame
       const color = getColorForClass(prediction.class);
 
-      // رسم المستطيل
+      // Drawing the bounding box
       ctx.strokeStyle = color;
       ctx.lineWidth = 2;
       ctx.strokeRect(x, y, width, height);
 
-      // حساب النسبة
+      // Calculate the percentage of the prediction
       const confidence = (prediction.score * 100).toFixed(1);
 
-      // رسم النص
+      // Drawing the text
       ctx.fillStyle = color;
       ctx.font = "16px Arial";
       ctx.fillText(
         `${prediction.class} (${confidence}%)`,
         x,
-        y > 10 ? y - 5 : 10 // حدد الموقع الذي سيحتوي على النص
+        y > 10 ? y - 5 : 10 // make sure the text is not too close to the top
       );
     });
   };
@@ -115,7 +114,7 @@ const ObjectDetection: React.FC = () => {
 
   return (
     <div style={{ position: "relative" }}>
-      {/* الفيديو */}
+      {/* video */}
       <video
         ref={videoRef}
         autoPlay
@@ -124,7 +123,7 @@ const ObjectDetection: React.FC = () => {
         style={{ width: "100%", maxWidth: "720px" }}
       />
 
-      {/* الكانفاس */}
+      {/* canvas */}
       <canvas
         ref={canvasRef}
         style={{
